@@ -83,40 +83,58 @@ This document summarizes the physical constraints and empirical priors used by t
 ## Species Constraints
 
 ### Nb Metal
-- Reference position: **202.30 eV**
+- Position: **202.20 eV**
 - Line shape: **LA(1.2,5,12)**
-- FWHM: Free parameter during optimization, empirically calibrated afterward.
 
 ### NbO
-- Position: **~203.4 eV**
-- GL line shape
+- Position: **203.70 eV**
+- Line shape: **GL**
 
 ### NbO₂
-- Position: **~205.2 eV**
-- GL line shape
+- Position: **206.20 eV**
+- Line shape: **GL**
 
 ### Nb₂O₅
-- Position: **~206.7 eV**
-- GL line shape
+- Position: **207.40 eV**
+- Line shape: **GL**
 
 ## Position Priors
 
-| Species | Center (eV) |
-|---------|------------:|
-| Nb metal | 202.30 |
-| NbO | ~203.4 |
-| NbO₂ | ~205.2 |
-| Nb₂O₅ | ~206.7 |
+| Species | Center | Prior Width |
+|----------|-------:|------------:|
+| Nb metal | **202.20 eV** | ±0.30 eV |
+| NbO | **203.70 eV** | ±1.00 eV |
+| NbO₂ | **206.20 eV** | ±1.00 eV |
+| Nb₂O₅ | **207.40 eV** | ±0.40 eV |
 
-(Standard deviations are defined in the notebook via `CENTER_PRIORS`.)
+These Gaussian priors are derived from the literature values used for the fitting routine.
 
-## Area Composition Prior
+## Average Composition Prior
 
-Average composition fractions are obtained from calibrated reference datasets and converted into soft optimization priors.
+| Species | Average Fraction |
+|----------|----------------:|
+| Nb metal | **14.454%** |
+| NbO | **2.357%** |
+| NbO₂ | **3.829%** |
+| Nb₂O₅ | **79.360%** |
+
+These are soft priors used only to guide optimization.
 
 ## Metal FWHM Calibration
 
-The optimized metal FWHM is multiplied by an empirical calibration factor determined from CasaXPS comparisons. This calibration is only applied to the reported value and does not affect optimization.
+Calibration factor:
+
+```text
+0.471353
+```
+
+Applied only when reporting the final metal FWHM:
+
+```text
+FWHM_corrected = FWHM_fit × 0.471353
+```
+
+The calibration is **not** used during optimization.
 
 ---
 
@@ -170,10 +188,10 @@ The optimized metal FWHM is multiplied by an empirical calibration factor determ
 
 | Species | Center | Prior Width |
 |----------|-------:|------------:|
-| Ta metal | 21.60 eV | Reference (post-shift) |
-| Ta₂O₅ | 26.70 eV | ±0.30 eV |
-| TaOx | 23.40 eV | ±0.30 eV |
-| O 2s | 24.00 eV | ±1.00 eV |
+| Ta metal | **21.60 eV** | Reference (post-shift) |
+| Ta₂O₅ | **26.70 eV** | ±0.30 eV |
+| TaOx | **23.40 eV** | ±0.30 eV |
+| O 2s | **24.00 eV** | ±1.00 eV |
 
 ## Average Composition Prior
 
@@ -188,45 +206,28 @@ These are soft priors used only to guide optimization.
 
 ## Metal FWHM Calibration
 
-Average Python fit: **0.699 eV**
-
-Average CasaXPS: **0.533 eV**
-
 Calibration factor:
 
 ```text
-0.533 / 0.699 = 0.762
+0.762
 ```
 
-Reported metal FWHM:
+Applied only when reporting the final metal FWHM:
 
 ```text
 FWHM_corrected = FWHM_fit × 0.762
 ```
 
+The calibration is **not** used during optimization.
+
 ---
 
 # Common Workflow
 
-1. Adaptive Shirley Background
-   - Automatic endpoint detection
-   - No hard-coded binding energies
-
+1. Adaptive Shirley background (automatic endpoint detection)
 2. Simultaneous constrained optimization
-
 3. Automatic post-fit energy calibration
-
 4. Multi-start optimization
-
-5. Soft physical priors
-   - Positions
-   - Composition fractions
-   - FWHMs
-   - Baseline terms
-
-6. Output
-   - 1σ uncertainties
-   - Residual analysis
-   - Reduced χ²
-   - Final calibrated peak table
+5. Soft physical priors (positions, composition, FWHMs, baseline)
+6. Output: uncertainties, residual analysis, reduced χ², calibrated peak tables
 
