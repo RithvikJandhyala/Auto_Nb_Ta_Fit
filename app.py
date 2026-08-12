@@ -13,7 +13,7 @@ from xps_pipeline import analyze_xy_file, figure_to_png_bytes, get_element_confi
 # ============================================================
 
 st.set_page_config(
-    page_title="Automated Nb / Ta XPS Peak Fitting 2",
+    page_title="Automated Nb / Ta XPS Peak Fitting",
     page_icon="image.png",
     layout="wide",
 )
