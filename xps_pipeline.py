@@ -239,134 +239,481 @@ def _execute_notebook_core(
 
 def _create_shirley_figure(ns: dict[str, Any], element: str):
     cfg = get_element_config(element)
-    x_original = np.asarray(ns["x_original"], dtype=float)
-    y_original = np.asarray(ns["y_original"], dtype=float)
-    shirley = np.asarray(ns["shirley"], dtype=float)
 
-    background_subtracted = y_original - shirley
+    x_original = np.asarray(
+        ns["x_original"],
+        dtype=float,
+    )
+
+    y_original = np.asarray(
+        ns["y_original"],
+        dtype=float,
+    )
+
+    shirley = np.asarray(
+        ns["shirley"],
+        dtype=float,
+    )
+
+    background_subtracted = (
+        y_original - shirley
+    )
+
     shirley_min = ns["SHIRLEY_MIN_BE"]
     shirley_max = ns["SHIRLEY_MAX_BE"]
 
-    fig, ax = plt.subplots(figsize=(11, 6))
-    ax.plot(x_original, y_original, color="tab:blue", lw=1.8, label="Raw data", zorder=3)
-    ax.plot(
-        x_original, shirley, "--", color="tab:orange", lw=2.2,
-        label="Adaptive Shirley background (pre-shift)", zorder=2,
+    # --------------------------------------------------------
+    # Figure
+    # --------------------------------------------------------
+
+    fig, ax = plt.subplots(
+        figsize=(11, 6)
     )
+
+    # Raw spectrum
     ax.plot(
-        x_original, background_subtracted, color="tab:green", lw=1.8,
-        label="Shirley-subtracted spectrum", zorder=1,
+        x_original,
+        y_original,
+        color="tab:blue",
+        lw=1.8,
+        label="Raw data",
+        zorder=3,
+    )
+
+    # Shirley background
+    ax.plot(
+        x_original,
+        shirley,
+        "--",
+        color="tab:orange",
+        lw=2.2,
+        label="Adaptive Shirley background (pre-shift)",
+        zorder=2,
+    )
+
+    # Background-subtracted spectrum
+    ax.plot(
+        x_original,
+        background_subtracted,
+        color="tab:green",
+        lw=1.8,
+        label="Shirley-subtracted spectrum",
+        zorder=1,
+    )
+
+    # --------------------------------------------------------
+    # Shirley window
+    # --------------------------------------------------------
+
+    ax.axvline(
+        shirley_min,
+        color="gray",
+        linestyle="--",
+        linewidth=1.5,
+        label="Adaptive Shirley window",
     )
 
     ax.axvline(
-        shirley_min, color="gray", linestyle="--", linewidth=1.5,
-        label="Adaptive Shirley window",
-    )
-    ax.axvline(shirley_max, color="gray", linestyle="--", linewidth=1.5)
-    ax.axvspan(shirley_min, shirley_max, color="gray", alpha=0.08, zorder=0)
-
-    y_top = np.nanmax(y_original)
-    ax.text(
-        shirley_min, 0.97 * y_top, f"{shirley_min:.2f} eV",
-        rotation=90, va="top", ha="right", fontsize=9, color="gray",
-    )
-    ax.text(
-        shirley_max, 0.97 * y_top, f"{shirley_max:.2f} eV",
-        rotation=90, va="top", ha="left", fontsize=9, color="gray",
+        shirley_max,
+        color="gray",
+        linestyle="--",
+        linewidth=1.5,
     )
 
-    ax.set_title(f"{ns['base_name']}: Adaptive Shirley Background Pre-Shift")
-    ax.set_xlabel("Binding Energy (eV)")
-    ax.set_ylabel("Intensity (counts/sec)")
-    ax.set_xlim(*cfg["xlim"])
-    ax.grid(alpha=0.15)
-    ax.legend(frameon=False, loc="best")
+    ax.axvspan(
+        shirley_min,
+        shirley_max,
+        color="gray",
+        alpha=0.08,
+        zorder=0,
+    )
+
+    # --------------------------------------------------------
+    # Endpoint labels
+    # --------------------------------------------------------
+
+    y_top = np.nanmax(
+        y_original
+    )
+
+    ax.text(
+        shirley_min,
+        0.97 * y_top,
+        f"{shirley_min:.2f} eV",
+        rotation=90,
+        va="top",
+        ha="right",
+        fontsize=9,
+        color="gray",
+    )
+
+    ax.text(
+        shirley_max,
+        0.97 * y_top,
+        f"{shirley_max:.2f} eV",
+        rotation=90,
+        va="top",
+        ha="left",
+        fontsize=9,
+        color="gray",
+    )
+
+    # --------------------------------------------------------
+    # Labels
+    # --------------------------------------------------------
+
+    ax.set_title(
+        f"{ns['base_name']}: "
+        f"Adaptive Shirley Background Pre-Shift"
+    )
+
+    ax.set_xlabel(
+        "Binding Energy (eV)"
+    )
+
+    ax.set_ylabel(
+        "Intensity (counts/sec)"
+    )
+
+    # --------------------------------------------------------
+    # SHOW THE ENTIRE UPLOADED SPECTRUM
+    # --------------------------------------------------------
+
+    x_min = np.nanmin(
+        x_original
+    )
+
+    x_max = np.nanmax(
+        x_original
+    )
+
+    x_range = (
+        x_max - x_min
+    )
+
+    # Small padding so endpoints are not touching the frame
+    x_padding = (
+        0.02 * x_range
+    )
+
+    # Conventional XPS direction:
+    # high binding energy on left,
+    # low binding energy on right
+    ax.set_xlim(
+        x_max + x_padding,
+        x_min - x_padding,
+    )
+
+    # --------------------------------------------------------
+    # Appearance
+    # --------------------------------------------------------
+
+    ax.grid(
+        alpha=0.15
+    )
+
+    ax.legend(
+        frameon=False,
+        loc="best",
+    )
+
     fig.tight_layout()
+
     return fig
 
 
 def _create_fit_figure(ns: dict[str, Any], element: str):
     cfg = get_element_config(element)
+
     x = ns["x"]
     popt = ns["popt"]
     x_shifted = ns["x_shifted"]
     energy_shift = ns["energy_shift"]
 
     model_at_x = ns["total_model"](x, popt)
-    component_curves = list(ns["component_curves"](x, popt))
+    component_curves = list(
+        ns["component_curves"](x, popt)
+    )
 
-    valid_bg = np.isfinite(ns["shirley"])
-    bg_order = np.argsort(ns["x_original"][valid_bg])
+    # --------------------------------------------------------
+    # Shirley background interpolated onto fitting grid
+    # --------------------------------------------------------
+
+    valid_bg = np.isfinite(
+        ns["shirley"]
+    )
+
+    bg_order = np.argsort(
+        ns["x_original"][valid_bg]
+    )
+
     shirley_at_x = np.interp(
         x,
         ns["x_original"][valid_bg][bg_order],
         ns["shirley"][valid_bg][bg_order],
     )
-    raw_x_shifted = ns["x_original"] + energy_shift
 
-    component_bg = [curve + shirley_at_x for curve in component_curves]
-    total_fit_bg = model_at_x + shirley_at_x
+    # Full raw spectrum after energy shift
+    raw_x_shifted = (
+        ns["x_original"]
+        + energy_shift
+    )
 
-    # Identical palette/order for Nb and Ta.
-    colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd"]
+    component_bg = [
+        curve + shirley_at_x
+        for curve in component_curves
+    ]
+
+    total_fit_bg = (
+        model_at_x
+        + shirley_at_x
+    )
+
+    # --------------------------------------------------------
+    # Colors / labels
+    # --------------------------------------------------------
+
+    colors = [
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#9467bd",
+    ]
+
     labels = cfg["plot_labels"]
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(11, 12), sharex=True)
+    # --------------------------------------------------------
+    # Figure
+    # --------------------------------------------------------
+
+    fig, (ax1, ax2) = plt.subplots(
+        2,
+        1,
+        figsize=(11, 12),
+        sharex=True,
+    )
+
+    # ========================================================
+    # TOP: RAW SPECTRUM + SHIRLEY + FIT
+    # ========================================================
 
     ax1.plot(
-        raw_x_shifted, ns["y_original"], color="black", lw=1.5,
-        label="Raw data", zorder=10,
+        raw_x_shifted,
+        ns["y_original"],
+        color="black",
+        lw=1.5,
+        label="Raw data",
+        zorder=10,
     )
+
     ax1.plot(
-        raw_x_shifted, ns["shirley"], "--", color="gray", lw=2,
+        raw_x_shifted,
+        ns["shirley"],
+        "--",
+        color="gray",
+        lw=2,
         label="Shirley background",
     )
-    for curve_bg, color, label in zip(component_bg, colors, labels):
-        ax1.fill_between(
-            x_shifted, shirley_at_x, curve_bg,
-            color=color, alpha=0.35, label=label,
-        )
-        ax1.plot(x_shifted, curve_bg, color=color, lw=1)
 
-    ax1.plot(x_shifted, total_fit_bg, color="red", lw=2.5, label="Total fit")
-    ax1.set_title(f'{ns["base_name"]}: Raw Spectrum with Shirley Background Post-Shift')
-    ax1.set_ylabel("Intensity (counts/sec)")
-    ax1.set_xlabel("Binding Energy (eV)")
-    ax1.tick_params(axis="x", labelbottom=True)
-    ax1.legend(frameon=False, ncol=2)
+    for curve_bg, color, label in zip(
+        component_bg,
+        colors,
+        labels,
+    ):
+        ax1.fill_between(
+            x_shifted,
+            shirley_at_x,
+            curve_bg,
+            color=color,
+            alpha=0.35,
+            label=label,
+        )
+
+        ax1.plot(
+            x_shifted,
+            curve_bg,
+            color=color,
+            lw=1,
+        )
+
+    ax1.plot(
+        x_shifted,
+        total_fit_bg,
+        color="red",
+        lw=2.5,
+        label="Total fit",
+    )
+
+    ax1.set_title(
+        f'{ns["base_name"]}: '
+        f'Raw Spectrum with Shirley Background Post-Shift'
+    )
+
+    ax1.set_ylabel(
+        "Intensity (counts/sec)"
+    )
+
+    ax1.set_xlabel(
+        "Binding Energy (eV)"
+    )
+
+    ax1.tick_params(
+        axis="x",
+        labelbottom=True,
+    )
+
+    ax1.legend(
+        frameon=False,
+        ncol=2,
+    )
+
+    # ========================================================
+    # BOTTOM: SHIRLEY-CORRECTED FIT
+    # ========================================================
 
     ax2.plot(
-        x_shifted, ns["y"], "ko", markersize=3,
+        x_shifted,
+        ns["y"],
+        "ko",
+        markersize=3,
         label="Shirley-corrected data",
     )
-    for curve, color, label in zip(component_curves, colors, labels):
+
+    for curve, color, label in zip(
+        component_curves,
+        colors,
+        labels,
+    ):
         ax2.fill_between(
-            x_shifted, 0, curve, color=color, alpha=0.35, label=label,
+            x_shifted,
+            0,
+            curve,
+            color=color,
+            alpha=0.35,
+            label=label,
         )
-        ax2.plot(x_shifted, curve, color=color, lw=1)
 
-    ax2.plot(x_shifted, model_at_x, color="red", lw=2.5, label="Total fit")
-    ax2.set_title(f'{ns["base_name"]}: Shirley-Corrected Simultaneous Fit Post-Shift')
-    ax2.set_xlabel("Binding Energy (eV)")
-    ax2.set_ylabel("Intensity (counts/sec)")
-    ax2.legend(frameon=False, ncol=2)
+        ax2.plot(
+            x_shifted,
+            curve,
+            color=color,
+            lw=1,
+        )
 
-    ax1.set_xlim(*cfg["xlim"])
+    ax2.plot(
+        x_shifted,
+        model_at_x,
+        color="red",
+        lw=2.5,
+        label="Total fit",
+    )
+
+    ax2.set_title(
+        f'{ns["base_name"]}: '
+        f'Shirley-Corrected Simultaneous Fit Post-Shift'
+    )
+
+    ax2.set_xlabel(
+        "Binding Energy (eV)"
+    )
+
+    ax2.set_ylabel(
+        "Intensity (counts/sec)"
+    )
+
+    ax2.legend(
+        frameon=False,
+        ncol=2,
+    )
+
+    # ========================================================
+    # SHOW FULL SHIFTED RAW SPECTRUM
+    # ========================================================
+
+    x_min = np.nanmin(
+        raw_x_shifted
+    )
+
+    x_max = np.nanmax(
+        raw_x_shifted
+    )
+
+    x_range = (
+        x_max - x_min
+    )
+
+    # Small padding so the first/last points
+    # do not sit directly on the frame
+    x_padding = (
+        0.02 * x_range
+    )
+
+    # XPS convention:
+    # high binding energy on left,
+    # low binding energy on right
+    ax1.set_xlim(
+        x_max + x_padding,
+        x_min - x_padding,
+    )
+
     fig.tight_layout()
+
     return fig
 
 
 def _create_residual_figure(ns: dict[str, Any], element: str):
-    cfg = get_element_config(element)
-    residuals = ns["y"] - ns["total_model"](ns["x"], ns["popt"])
-    fig, ax = plt.subplots(figsize=(11, 4))
-    ax.axhline(0.0, color="black", linestyle="--", linewidth=1)
-    ax.plot(ns["x_shifted"], residuals, linewidth=1.3)
+    residuals = (
+        ns["y"]
+        - ns["total_model"](
+            ns["x"],
+            ns["popt"],
+        )
+    )
+
+    x_residual = np.asarray(
+        ns["x_shifted"],
+        dtype=float,
+    )
+
+    fig, ax = plt.subplots(
+        figsize=(11, 4)
+    )
+
+    ax.axhline(
+        0.0,
+        color="black",
+        linestyle="--",
+        linewidth=1,
+    )
+
+    ax.plot(
+        x_residual,
+        residuals,
+        linewidth=1.3,
+    )
+
     ax.set_xlabel("Binding Energy (eV)")
     ax.set_ylabel("Residual")
-    ax.set_title(f'{ns["base_name"]}: Fit Residuals')
-    ax.set_xlim(*cfg["xlim"])
+    ax.set_title(
+        f'{ns["base_name"]}: Fit Residuals'
+    )
+
+    # --------------------------------------------------------
+    # Show the entire residual domain
+    # --------------------------------------------------------
+
+    x_min = np.nanmin(x_residual)
+    x_max = np.nanmax(x_residual)
+
+    x_padding = 0.02 * (x_max - x_min)
+
+    ax.set_xlim(
+        x_max + x_padding,
+        x_min - x_padding,
+    )
+
     fig.tight_layout()
+
     return fig, residuals
 
 
