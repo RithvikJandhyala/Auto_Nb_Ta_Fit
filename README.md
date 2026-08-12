@@ -64,3 +64,169 @@ The pipeline executes selected cells from the notebooks so the web interface rem
 - `Ta_fitting_notebook.ipynb` — Ta scientific fitting source
 - `requirements.txt` — Python dependencies
 - `run_app.command` — macOS launcher
+
+# XPS Peak Fitting Constraints & Physical Priors
+
+This document summarizes the physical constraints and empirical priors used by the automated **Niobium (Nb 3d)** and **Tantalum (Ta 4f)** XPS fitting workflows.
+
+---
+
+# Niobium (Nb 3d)
+
+## Doublet Constraints
+
+| Parameter | Value |
+|-----------|-------|
+| Spin-orbit separation | **2.72 eV** |
+| Area ratio (3d5/2 : 3d3/2) | **3 : 2** |
+
+## Species Constraints
+
+### Nb Metal
+- Reference position: **202.30 eV**
+- Line shape: **LA(1.2,5,12)**
+- FWHM: Free parameter during optimization, empirically calibrated afterward.
+
+### NbO
+- Position: **~203.4 eV**
+- GL line shape
+
+### NbO₂
+- Position: **~205.2 eV**
+- GL line shape
+
+### Nb₂O₅
+- Position: **~206.7 eV**
+- GL line shape
+
+## Position Priors
+
+| Species | Center (eV) |
+|---------|------------:|
+| Nb metal | 202.30 |
+| NbO | ~203.4 |
+| NbO₂ | ~205.2 |
+| Nb₂O₅ | ~206.7 |
+
+(Standard deviations are defined in the notebook via `CENTER_PRIORS`.)
+
+## Area Composition Prior
+
+Average composition fractions are obtained from calibrated reference datasets and converted into soft optimization priors.
+
+## Metal FWHM Calibration
+
+The optimized metal FWHM is multiplied by an empirical calibration factor determined from CasaXPS comparisons. This calibration is only applied to the reported value and does not affect optimization.
+
+---
+
+# Tantalum (Ta 4f)
+
+## Doublet Constraints
+
+| Parameter | Value |
+|-----------|-------|
+| Spin-orbit separation | **1.91 eV** |
+| Area ratio (4f7/2 : 4f5/2) | **4 : 3** |
+
+## Species Constraints
+
+### Ta Metal
+
+| Property | Value |
+|----------|-------|
+| Position | **21.60 eV** |
+| Line shape | **LA(1.1,7,25)** |
+| FWHM | **< 0.70 eV** |
+
+### Ta₂O₅
+
+| Property | Value |
+|----------|-------|
+| Position | **26.70 eV** |
+| Position prior | ±0.30 eV |
+| Line shape | **GL(30)** |
+| FWHM | **< 1.20 eV** |
+
+### TaOx
+
+| Property | Value |
+|----------|-------|
+| Position | **23.40 eV** |
+| Position prior | ±0.30 eV |
+| Line shape | **GL(30)** |
+| FWHM | **Locked to Ta₂O₅ FWHM** |
+
+### O 2s
+
+| Property | Value |
+|----------|-------|
+| Position | **24.00 eV** |
+| Position prior | ±1.00 eV |
+| Line shape | **GL(30)** |
+| FWHM | **2.5–5.0 eV** |
+
+## Position Priors
+
+| Species | Center | Prior Width |
+|----------|-------:|------------:|
+| Ta metal | 21.60 eV | Reference (post-shift) |
+| Ta₂O₅ | 26.70 eV | ±0.30 eV |
+| TaOx | 23.40 eV | ±0.30 eV |
+| O 2s | 24.00 eV | ±1.00 eV |
+
+## Average Composition Prior
+
+| Species | Average Fraction |
+|----------|----------------:|
+| Ta metal | **46.48%** |
+| Ta₂O₅ | **46.24%** |
+| TaOx | **3.09%** |
+| O 2s | **4.19%** |
+
+These are soft priors used only to guide optimization.
+
+## Metal FWHM Calibration
+
+Average Python fit: **0.699 eV**
+
+Average CasaXPS: **0.533 eV**
+
+Calibration factor:
+
+```text
+0.533 / 0.699 = 0.762
+```
+
+Reported metal FWHM:
+
+```text
+FWHM_corrected = FWHM_fit × 0.762
+```
+
+---
+
+# Common Workflow
+
+1. Adaptive Shirley Background
+   - Automatic endpoint detection
+   - No hard-coded binding energies
+
+2. Simultaneous constrained optimization
+
+3. Automatic post-fit energy calibration
+
+4. Multi-start optimization
+
+5. Soft physical priors
+   - Positions
+   - Composition fractions
+   - FWHMs
+   - Baseline terms
+
+6. Output
+   - 1σ uncertainties
+   - Residual analysis
+   - Reduced χ²
+   - Final calibrated peak table
+
