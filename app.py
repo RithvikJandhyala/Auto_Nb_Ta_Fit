@@ -6,6 +6,9 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import streamlit as st
 
 from xps_pipeline import analyze_xy_file, figure_to_png_bytes, get_element_config
+import streamlit.components.v1 as components
+
+
 
 
 # ============================================================
@@ -43,7 +46,12 @@ st.sidebar.markdown(
     """
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
+     <p>
+        <a href="https://www.youtube.com/watch?v=jJSbSXz-YB8" target="_blank" style="text-decoration:none;">
+            <i class="fab fa-youtube" style="color:#FF0000;"></i>
+            Demo Video
+        </a>
+    </p>
     <p>
         <a href="https://www.linkedin.com/in/rithvik-jandhyala/" target="_blank" style="text-decoration:none;">
             <i class="fab fa-linkedin" style="color:#0A66C2;"></i>
